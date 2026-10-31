@@ -1,0 +1,93 @@
+# Material del curso almacenado en el equipo local
+/instrucciones/
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# Configuración local y credenciales; permitir plantillas sin secretos
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Python: cachés y archivos de distribución
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+/build/
+/dist/
+
+# Jupyter y cachés de herramientas
+.ipynb_checkpoints/
+.ipython/
+.jupyter/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Conjuntos de datos y archivos descargados
+/data/
+/datasets/
+/simpsons/
+/simpsons_train/
+/simpsons_test/
+/simpsons_testset/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# Modelos entrenados, puntos de control y registros de experimentos
+/artifacts/
+/pesos/
+/saved_model/
+/logs/
+/runs/
+/wandb/
+/mlruns/
+*.keras
+*.h5
+*.hdf5
+*.ckpt
+*.ckpt.*
+*.tfevents.*
+checkpoint
+
+# Temporales de compilación LaTeX
+*.aux
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# Archivos locales del sistema, editores y temporales
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~

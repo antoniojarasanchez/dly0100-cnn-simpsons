@@ -2,6 +2,7 @@
 # Las rutas de archivos y carpetas se reciben como objetos Path.
 import json
 import re
+import shutil
 import tarfile
 from collections import Counter
 
@@ -275,4 +276,11 @@ def guardar_respaldo(contenido, ruta):
     # El registro completo queda fuera del notebook para mantenerlo liviano.
     ruta.write_text(
         json.dumps(contenido, ensure_ascii=False, allow_nan=False), encoding="utf-8"
+    )
+
+
+def empaquetar_resultados(carpeta):
+    # El ZIP queda junto a la carpeta para no incluirse a sí mismo.
+    return shutil.make_archive(
+        str(carpeta), "zip", root_dir=carpeta.parent, base_dir=carpeta.name
     )

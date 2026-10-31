@@ -35,15 +35,17 @@ Al ejecutar el notebook, se crea `resultados/` con los siguientes archivos:
 - **`resultados.json`:** registro completo del experimento, con configuraciones, historiales, métricas y predicciones.
 - **`figuras/`:** gráficos y muestras de imágenes en PNG, exportados al mostrarse en el notebook.
 
-Si alguien deseara consultar o analizar una ejecución ya guardada, puede descargar estos archivos desde este mismo repositorio y cargarlos en Colab, sin necesidad repetir los entrenamientos ni ejecutar todo el notebook.
+Al terminar, el notebook comprime la carpeta en `resultados.zip` e inicia su descarga en Colab. Basta con compartir ese ZIP para revisar los resultados y actualizar el informe. Para la entrega, guarda también el notebook con sus salidas.
+
+Si alguien deseara consultar o analizar una ejecución ya guardada, puede descargar estos archivos desde este mismo repositorio y cargarlos en Colab, sin necesidad de repetir los entrenamientos ni ejecutar todo el notebook.
 
 ## Estructura del repositorio
 
 | Archivo o carpeta | Contenido |
 |---|---|
-| `clasificacion_simpsons_cnn.ipynb` | Código, salidas e interpretaciones. Pendiente. |
 | [informe/](informe/) | `informe.tex` e `informe.pdf`, con el análisis, las comparaciones y las conclusiones de la misma ejecución. Pendiente. |
-| [resultados/](resultados/) | Archivos generados por el experimento. |
+| [resultados/](resultados/) | Archivos generados por el experimento. Pendiente. |
+| [clasificacion_simpsons_cnn.ipynb](clasificacion_simpsons_cnn.ipynb) | Código, salidas e interpretaciones. Pendiente. |
 | [utilidades.py](utilidades.py) | Carga de datos, gráficos, formato de tablas y exportación. |
 | [requirements.txt](requirements.txt) | Dependencias de Python. |
 | [.gitignore](.gitignore) | Exclusiones de datos, pesos, entornos y archivos temporales. |

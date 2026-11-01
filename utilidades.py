@@ -1,15 +1,28 @@
 # Utilidades de datos, visualización y exportación del Parcial 2.
 # Las rutas de archivos y carpetas se reciben como objetos Path.
+import contextlib
+import io
 import json
 import re
 import shutil
 import tarfile
+import time
 from collections import Counter
 
 import cv2
 import gdown
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+)
+from tensorflow import keras
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, MaxPooling2D
 from IPython.display import Markdown, display
 
 EXTENSIONES = {".jpg", ".jpeg", ".png"}
@@ -284,3 +297,252 @@ def empaquetar_resultados(carpeta):
     return shutil.make_archive(
         str(carpeta), "zip", root_dir=carpeta.parent, base_dir=carpeta.name
     )
+
+
+def crear_modelo(config, img_size, num_classes):
+    # La configuración define arquitectura, dropout y tasa de aprendizaje.
+    red = keras.Sequential(name="cnn_" + config["id"])
+    red.add(keras.Input(shape=(img_size, img_size, 3)))
+    if config["arquitectura"] == "simple":
+        red.add(Conv2D(64, (3, 3), strides=1, padding="valid", activation="relu"))
+        red.add(MaxPooling2D((2, 2)))
+        if config["dropout"]:
+            red.add(Dropout(config["dropout"]))
+        unidades = 128
+    elif config["arquitectura"] == "profunda":
+        red.add(Conv2D(32, (3, 3), strides=1, padding="valid", activation="relu"))
+        red.add(Conv2D(32, (3, 3), strides=1, padding="valid", activation="relu"))
+        red.add(MaxPooling2D((2, 2)))
+        if config["dropout"]:
+            red.add(Dropout(config["dropout"]))
+        red.add(Conv2D(64, (3, 3), strides=1, padding="valid", activation="relu"))
+        red.add(MaxPooling2D((2, 2)))
+        unidades = 512
+    else:
+        raise ValueError("Arquitectura desconocida.")
+    red.add(Flatten())
+    red.add(Dense(unidades, activation="relu"))
+    if config["dropout"]:
+        red.add(Dropout(config["dropout"]))
+    red.add(Dense(num_classes, activation="softmax"))
+    red.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=config["lr"]),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+    return red
+
+
+def ejecutar_run(config, semilla, datos, ajustes, numero_run):
+    # Los arreglos se reciben por referencia; no se copian los conjuntos.
+    X_train, Y_train = datos["X_train"], datos["Y_train"]
+    X_val, Y_val, y_val = datos["X_val"], datos["Y_val"], datos["y_val"]
+    PESOS_DIR = ajustes["carpeta_pesos"]
+    BATCH_SIZE = ajustes["batch_size"]
+    MAX_EPOCHS = ajustes["max_epochs"]
+    PACIENCIA = ajustes["paciencia"]
+    run_id = f"{config['id']}_s{semilla}"
+    pesos = PESOS_DIR / f"{run_id}.weights.h5"
+    # Cada RUN empieza sin un checkpoint anterior.
+    pesos.unlink(missing_ok=True)
+    # Preparar un modelo nuevo para esta semilla.
+    keras.backend.clear_session()
+    keras.utils.set_random_seed(semilla)
+    red = crear_modelo(config, ajustes["img_size"], ajustes["num_classes"])
+    parada = EarlyStopping(
+        monitor="val_loss",
+        mode="min",
+        patience=PACIENCIA,
+        restore_best_weights=True,
+    )
+    checkpoint = ModelCheckpoint(
+        str(pesos),
+        monitor="val_loss",
+        mode="min",
+        save_best_only=True,
+        save_weights_only=True,
+    )
+    traza = io.StringIO()
+    print(
+        f"Entrenamiento {numero_run}/18 | {run_id} | "
+        f"arquitectura={config['arquitectura']}, dropout={config['dropout']}, lr={config['lr']}",
+        flush=True,
+    )
+    # Entrenar y conservar la traza completa.
+    inicio = time.perf_counter()
+    with contextlib.redirect_stdout(traza):
+        entrenamiento = red.fit(
+            X_train,
+            Y_train,
+            validation_data=(X_val, Y_val),
+            batch_size=BATCH_SIZE,
+            epochs=MAX_EPOCHS,
+            shuffle=True,
+            verbose=2,
+            callbacks=[parada, checkpoint],
+        )
+    segundos = time.perf_counter() - inicio
+    historial = {
+        k: [float(v) for v in valores] for k, valores in entrenamiento.history.items()
+    }
+    assert all(np.isfinite(valores).all() for valores in historial.values())
+    # Se evalúan los pesos del mínimo val_loss, no los de la última época.
+    red.load_weights(pesos)
+    metricas = red.evaluate(
+        X_val, Y_val, batch_size=BATCH_SIZE, verbose=0, return_dict=True
+    )
+    predicciones = red.predict(X_val, batch_size=BATCH_SIZE, verbose=0).argmax(axis=1)
+    mejor_epoca = int(np.argmin(historial["val_loss"])) + 1
+    assert np.isclose(metricas["loss"], min(historial["val_loss"]), atol=1e-5)
+    assert np.isclose(
+        metricas["accuracy"], accuracy_score(y_val, predicciones), atol=1e-6
+    )
+    # Registrar las métricas, las predicciones y el historial.
+    resultado = {
+        "id": run_id,
+        "config_id": config["id"],
+        "semilla": semilla,
+        "parametros": int(red.count_params()),
+        "epocas": len(historial["loss"]),
+        "mejor_epoca": mejor_epoca,
+        "segundos": segundos,
+        "detencion": "early_stopping" if parada.stopped_epoch > 0 else "max_epochs",
+        "val_loss": float(metricas["loss"]),
+        "val_accuracy": float(metricas["accuracy"]),
+        "val_f1_macro": float(
+            f1_score(y_val, predicciones, average="macro", zero_division=0)
+        ),
+        "predicciones_val": predicciones.tolist(),
+        "historial": historial,
+        "traza_fit": re.sub(r"\x1b\[[0-9;]*m", "", traza.getvalue()),
+        "checkpoint": pesos.as_posix(),
+    }
+    print(
+        f"{run_id}: val_accuracy={metricas['accuracy']:.4f}; mejor época={mejor_epoca}",
+        flush=True,
+    )
+    del red
+    return resultado
+
+
+def resumir_runs(resultados, ids, semillas):
+    # Cada configuración debe tener un resultado por cada semilla indicada.
+    filas = []
+    for nombre in ids:
+        runs = [run for run in resultados if run["config_id"] == nombre]
+        assert sorted(run["semilla"] for run in runs) == sorted(semillas)
+        filas.append(
+            {
+                "configuracion": nombre,
+                "parametros": runs[0]["parametros"],
+                "val_accuracy_media": float(np.mean([r["val_accuracy"] for r in runs])),
+                "val_accuracy_std": float(
+                    np.std([r["val_accuracy"] for r in runs], ddof=1)
+                ),
+                "val_f1_macro_media": float(np.mean([r["val_f1_macro"] for r in runs])),
+                "val_loss_media": float(np.mean([r["val_loss"] for r in runs])),
+            }
+        )
+    return pd.DataFrame(filas)
+
+
+def elegir_configuracion(resultados, ids, semillas):
+    # El orden fija el criterio principal y los desempates de la comparación.
+    tabla = resumir_runs(resultados, ids, semillas).sort_values(
+        ["val_accuracy_media", "val_f1_macro_media", "parametros", "configuracion"],
+        ascending=[False, False, True, True],
+    )
+    return str(tabla.iloc[0]["configuracion"])
+
+
+def entrenar_configuraciones(
+    ids, configuraciones, semillas, datos, ajustes, resultados
+):
+    # Cada entrenamiento se agrega a la lista recibida, conservando su orden.
+    for nombre in ids:
+        for semilla in semillas:
+            resultado = ejecutar_run(
+                configuraciones[nombre],
+                semilla,
+                datos,
+                ajustes,
+                len(resultados) + 1,
+            )
+            resultados.append(resultado)
+
+
+def evaluar_configuracion(
+    config, resultados, semillas, semilla_principal, datos, ajustes, nombres
+):
+    # Prueba se evalúa después de elegir la configuración por validación.
+    X_train, Y_train = datos["X_train"], datos["Y_train"]
+    X_val, Y_val = datos["X_val"], datos["Y_val"]
+    X_test, Y_test, y_test = datos["X_test"], datos["Y_test"], datos["y_test"]
+    BATCH_SIZE = ajustes["batch_size"]
+    num_classes = ajustes["num_classes"]
+    evaluaciones = []
+    prob_principal = None
+    for semilla in semillas:
+        run = next(
+            r
+            for r in resultados
+            if r["config_id"] == config["id"] and r["semilla"] == semilla
+        )
+        keras.backend.clear_session()
+        red = crear_modelo(config, ajustes["img_size"], ajustes["num_classes"])
+        if semilla == semilla_principal:
+            red.summary()
+        red.optimizer.build(red.trainable_variables)
+        red.load_weights(run["checkpoint"])
+        probabilidades = red.predict(X_test, batch_size=BATCH_SIZE, verbose=0)
+        assert np.isfinite(probabilidades).all() and np.allclose(
+            probabilidades.sum(axis=1), 1, atol=1e-5
+        )
+        predicciones = probabilidades.argmax(axis=1)
+        metricas = red.evaluate(
+            X_test, Y_test, batch_size=BATCH_SIZE, verbose=0, return_dict=True
+        )
+        assert np.isclose(
+            metricas["accuracy"], accuracy_score(y_test, predicciones), atol=1e-6
+        )
+        reporte = classification_report(
+            y_test,
+            predicciones,
+            labels=list(range(num_classes)),
+            target_names=nombres,
+            output_dict=True,
+            zero_division=0,
+        )
+        evaluaciones.append(
+            {
+                "semilla": semilla,
+                "loss": float(metricas["loss"]),
+                "accuracy": float(metricas["accuracy"]),
+                "precision_macro": reporte["macro avg"]["precision"],
+                "recall_macro": reporte["macro avg"]["recall"],
+                "f1_macro": reporte["macro avg"]["f1-score"],
+                "f1_weighted": reporte["weighted avg"]["f1-score"],
+                "reporte": reporte,
+                "matriz": confusion_matrix(
+                    y_test, predicciones, labels=list(range(num_classes))
+                ).tolist(),
+                "predicciones": predicciones.tolist(),
+            }
+        )
+        if semilla == semilla_principal:
+            prob_principal = probabilidades.copy()
+            metricas_train = red.evaluate(
+                X_train, Y_train, batch_size=BATCH_SIZE, verbose=0, return_dict=True
+            )
+            metricas_val = red.evaluate(
+                X_val, Y_val, batch_size=BATCH_SIZE, verbose=0, return_dict=True
+            )
+            brecha = {
+                "train": {k: float(v) for k, v in metricas_train.items()},
+                "validacion": {k: float(v) for k, v in metricas_val.items()},
+                "train_menos_val_accuracy": float(
+                    metricas_train["accuracy"] - metricas_val["accuracy"]
+                ),
+            }
+        del red
+    return evaluaciones, prob_principal, brecha

@@ -1,0 +1,47 @@
+real,prediccion,cantidad,fraccion_clase_real
+Abraham Simpson,Director Skinner,4,0.08333333333333333
+Lisa Simpson,Bart Simpson,4,0.08
+Homero Simpson,Moe,3,0.06
+Abraham Simpson,Moe,2,0.041666666666666664
+Bart Simpson,Lisa Simpson,2,0.04
+Edna Krabappel,Abraham Simpson,2,0.04
+Marge Simpson,Moe,2,0.04
+Milhouse,Sr. Burns,2,0.04081632653061224
+Milhouse,Moe,2,0.04081632653061224
+Nelson,Bart Simpson,2,0.04
+Nelson,Homero Simpson,2,0.04
+Bob Patiño,Moe,2,0.0425531914893617
+Abraham Simpson,Bart Simpson,1,0.020833333333333332
+Abraham Simpson,Nelson,1,0.020833333333333332
+Apu,Moe,1,0.02
+Bart Simpson,Abraham Simpson,1,0.02
+Bart Simpson,Homero Simpson,1,0.02
+Sr. Burns,Abraham Simpson,1,0.020833333333333332
+Sr. Burns,Sujeto de las historietas,1,0.020833333333333332
+Sr. Burns,Director Skinner,1,0.020833333333333332
+Jefe Gorgory,Kent Brockman,1,0.02
+Jefe Gorgory,Lisa Simpson,1,0.02
+Jefe Gorgory,Marge Simpson,1,0.02
+Jefe Gorgory,Moe,1,0.02
+Jefe Gorgory,Ned Flanders,1,0.02
+Sujeto de las historietas,Abraham Simpson,1,0.02040816326530612
+Sujeto de las historietas,Krusty,1,0.02040816326530612
+Sujeto de las historietas,Moe,1,0.02040816326530612
+Sujeto de las historietas,Director Skinner,1,0.02040816326530612
+Edna Krabappel,Apu,1,0.02
+Edna Krabappel,Homero Simpson,1,0.02
+Edna Krabappel,Director Skinner,1,0.02
+Homero Simpson,Abraham Simpson,1,0.02
+Homero Simpson,Bart Simpson,1,0.02
+Homero Simpson,Marge Simpson,1,0.02
+Kent Brockman,Sr. Burns,1,0.02
+Lisa Simpson,Homero Simpson,1,0.02
+Lisa Simpson,Marge Simpson,1,0.02
+Milhouse,Kent Brockman,1,0.02040816326530612
+Moe,Homero Simpson,1,0.02
+Nelson,Jefe Gorgory,1,0.02
+Nelson,Moe,1,0.02
+Nelson,Ned Flanders,1,0.02
+Director Skinner,Sr. Burns,1,0.02
+Bob Patiño,Bart Simpson,1,0.02127659574468085
+Bob Patiño,Sr. Burns,1,0.02127659574468085

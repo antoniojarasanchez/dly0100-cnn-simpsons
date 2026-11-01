@@ -15,7 +15,7 @@ Se adaptan dos arquitecturas del laboratorio `2.2.3_Redes_Convolucionales.ipynb`
 
 Se comparan seis configuraciones, con variantes de dropout y tasa de aprendizaje. A su vez, cada configuración se entrena con las semillas `42`, `123` y `456`: 18 entrenamientos en total. La configuración se elige comparando sus resultados en validación y el conjunto de prueba se evalúa después.
 
-Las arquitecturas, el entrenamiento, la selección y el cálculo de métricas permanecen visibles en el notebook.
+Las funciones de construcción de modelos, entrenamiento, selección y evaluación se implementan en `utilidades.py`. El notebook define sus entradas, las llama por etapas y conserva las explicaciones, los cálculos de respaldo y las salidas.
 
 ## Ejecución en Colab
 
@@ -44,8 +44,8 @@ Si alguien deseara consultar o analizar una ejecución ya guardada, puede descar
 | Archivo o carpeta | Contenido |
 |---|---|
 | [informe/](informe/) | `informe.tex` e `informe.pdf`, con el análisis, las comparaciones y las conclusiones de la misma ejecución. Pendiente. |
-| [resultados/](resultados/) | Archivos generados por el experimento. Pendiente. |
-| [clasificacion_simpsons_cnn.ipynb](clasificacion_simpsons_cnn.ipynb) | Código, salidas e interpretaciones. Pendiente. |
-| [utilidades.py](utilidades.py) | Carga de datos, gráficos, formato de tablas y exportación. |
+| [resultados/](resultados/) | Archivos generados por el experimento. |
+| [clasificacion_simpsons_cnn.ipynb](clasificacion_simpsons_cnn.ipynb) | Código, salidas e interpretaciones. |
+| [utilidades.py](utilidades.py) | Carga de datos, modelos, entrenamiento, selección, evaluación, gráficos y exportación. |
 | [requirements.txt](requirements.txt) | Dependencias de Python. |
 | [.gitignore](.gitignore) | Exclusiones de datos, pesos, entornos y archivos temporales. |
